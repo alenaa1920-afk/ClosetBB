@@ -63,6 +63,13 @@ export function Dashboard() {
     return <SignedOut />;
   }
 
+  // Atelier mode is a nicety on a laptop and a trap in production: it looks
+  // like a working wardrobe while saving to one browser, and the extension
+  // cannot reach it at all. Say so loudly rather than let her fill it up.
+  if (mode === "atelier" && process.env.NODE_ENV === "production") {
+    return <NotConfigured />;
+  }
+
   return (
     <div className="min-h-dvh">
       <Navbar onAdd={openAdd} />
@@ -177,6 +184,44 @@ function ErrorState({
         Try again
       </Button>
     </div>
+  );
+}
+
+/**
+ * Shown when a deployed Mon Amour has no Supabase keys. Deliberately blunt:
+ * the alternative is a wardrobe that quietly saves nowhere.
+ */
+function NotConfigured() {
+  return (
+    <main className="flex min-h-dvh items-center justify-center px-6 py-16">
+      <div className="glass max-w-lg rounded-xl px-8 py-12 sm:px-12">
+        <p className="mb-4 text-[0.66rem] font-medium tracking-[0.3em] text-accent uppercase">
+          Not connected
+        </p>
+        <h1 className="font-display text-[1.9rem] leading-tight tracking-[-0.02em] text-ink">
+          This Mon Amour has no wardrobe behind it yet
+        </h1>
+        <p className="mt-4 text-[0.9rem] leading-relaxed text-muted">
+          The site is live, but its database keys are missing — so nothing saved
+          here would be kept, and the Chrome extension has nowhere to file anything.
+        </p>
+
+        <div className="mt-8 rounded-md border border-gold/40 bg-gold/10 px-5 py-4">
+          <p className="mb-3 text-[0.8rem] font-medium text-ink">
+            In your Vercel project → Settings → Environment Variables:
+          </p>
+          <ul className="space-y-1.5 font-mono text-[0.74rem] text-muted">
+            <li>NEXT_PUBLIC_SUPABASE_URL</li>
+            <li>NEXT_PUBLIC_SUPABASE_ANON_KEY</li>
+          </ul>
+          <p className="mt-4 text-[0.78rem] leading-relaxed text-muted">
+            Then <span className="text-ink">redeploy</span>. These are read when the
+            site is built, not when it runs, so adding them to an existing
+            deployment changes nothing until it is rebuilt.
+          </p>
+        </div>
+      </div>
+    </main>
   );
 }
 
