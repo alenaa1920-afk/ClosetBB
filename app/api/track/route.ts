@@ -15,8 +15,18 @@ export const dynamic = "force-dynamic";
 /** Comfortably inside Vercel's limit while leaving room for slow shops. */
 export const maxDuration = 60;
 
-/** How many pieces one run will look at. */
-const BATCH = 20;
+/**
+ * The ceiling on one run. The real limiter is the time budget below — on
+ * Vercel's free plan this runs once a day, so it should get through as much as
+ * it safely can rather than stopping at an arbitrary count.
+ */
+const BATCH = 60;
+
+/**
+ * Stop with room to spare inside `maxDuration`, so the run always finishes
+ * tidily and records what it did instead of being killed mid-flight.
+ */
+const TIME_BUDGET_MS = 45_000;
 
 /**
  * Houses that answer a plain server fetch. The rest are re-checked by the
@@ -77,9 +87,18 @@ export async function GET(request: Request) {
     dropped: boolean;
   }> = [];
   const failures: Array<{ id: string; reason: string }> = [];
+  const startedAt = Date.now();
+  let ranOutOfTime = false;
 
   for (const row of due ?? []) {
     if (!row.product_url) continue;
+
+    if (Date.now() - startedAt > TIME_BUDGET_MS) {
+      // Whatever is left keeps its old `last_checked_at`, so it sits at the
+      // front of the queue tomorrow. Nothing is ever skipped permanently.
+      ranOutOfTime = true;
+      break;
+    }
 
     try {
       const observed = await probePrice(row.product_url);
@@ -129,6 +148,10 @@ export async function GET(request: Request) {
     checked: checked.length,
     drops: checked.filter((entry) => entry.dropped).length,
     failures: failures.length,
+    // True when there were more pieces than the run had time for; they go
+    // first tomorrow.
+    ranOutOfTime,
+    elapsedMs: Date.now() - startedAt,
     trackableStores: TRACKABLE.filter((key) => key !== "other"),
   });
 }
