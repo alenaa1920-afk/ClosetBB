@@ -335,3 +335,4 @@ Not verified, and you should treat these as the real tests:
 - **Auto-save and the price alarm have not run in a real browser session.**
 - The 401 paths on the extension endpoints could only be tested as 503 locally,
   since there are no Supabase keys here.
+# ClosetBB
