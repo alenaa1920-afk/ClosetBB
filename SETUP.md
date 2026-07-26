@@ -155,9 +155,12 @@ Want a nicer address? **Settings → Domains** in Vercel. A domain is about
 
 ### The price tracker
 
-`vercel.json` already schedules `/api/track` every six hours. Vercel's free plan
-allows one cron per day — it will quietly run daily instead of four times, which
-is plenty. On Pro it runs as written.
+There is exactly **one** cron job: `/api/track`, scheduled `0 3 * * *` — once a
+day at 03:00 UTC (08:30 IST). That fits inside Vercel's Hobby limits.
+
+If you ever move to Pro and want it more often, change the schedule in
+`vercel.json`; `0 */6 * * *` gives four runs a day. Nothing else needs touching
+— the endpoint is idempotent and picks up wherever it left off.
 
 Check it works after deploying:
 
@@ -217,7 +220,7 @@ says *best guess*, that store's selectors need a nudge (see
 | | |
 | --- | --- |
 | Supabase free tier | 500 MB database, 1 GB files — thousands of pieces |
-| Vercel Hobby | free for personal use, one cron per day |
+| Vercel Hobby | free for personal use; the one cron job runs daily |
 | Domain (optional) | ~₹800/year |
 
 Supabase pauses a free project after a week of no activity. Opening the site
@@ -233,7 +236,7 @@ out a notification when a price changes; the only way to know is to look again.
 What Mon Amour does is look again on a schedule:
 
 - **Myntra, Nykaa, Urbanic, Savana and most shops** — the server re-reads them
-  on the cron.
+  once a day, on the single Vercel cron job.
 - **Zara, H&M and Ajio** — these answer `403` to any server, so the extension
   re-reads them from her browser every six hours instead, where they answer
   normally. This only happens while Chrome is open.

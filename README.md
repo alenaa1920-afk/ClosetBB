@@ -197,9 +197,10 @@ pushes out a notification when a price moves. Every price watcher, Honey and
 Keepa included, re-reads the page on a schedule. Mon Amour does the same, by two
 routes, because one is not enough:
 
-- **`/api/track`**, called by Vercel Cron, re-reads the shops that answer a
-  server (Myntra, Nykaa, Urbanic, Savana and most others). It walks the pieces
-  whose price has gone longest unchecked, twenty at a time, and always stamps
+- **`/api/track`** — the project's only cron job, once a day at 03:00 UTC,
+  which is what Vercel's Hobby plan allows. It re-reads the shops that answer a
+  server (Myntra, Nykaa, Urbanic, Savana and most others), walking the twenty
+  pieces whose price has gone longest unchecked and always stamping
   `last_checked_at` so one stubborn page cannot stall the queue.
 - **The extension**, on a `chrome.alarms` timer every six hours, re-reads Zara,
   H&M and Ajio from inside her browser — the only place those shops will answer
