@@ -170,6 +170,59 @@ once, and that is the whole setup. No folder, no developer mode, no warnings.
 
 ---
 
+## 5 · The stopgap: her laptop, before the Store approves
+
+Perfectly reasonable — but the order matters, and getting it wrong produces an
+extension that fails silently on her machine.
+
+### Deploy first. Push second.
+
+`PRODUCTION_APP_URL` ships inside the extension. If you push while it is empty,
+the copy she downloads hunts for `localhost:3000–3003` **on her own laptop**,
+finds nothing, and shows a pink "pointing at localhost:3000" with no wardrobe.
+She would have to type the address by hand to rescue it.
+
+So:
+
+1. Deploy to Vercel and get the real URL (§2, §3)
+2. Set it in `extension/service-worker.js`:
+   ```js
+   const PRODUCTION_APP_URL = "https://monamour.yourdomain.com";
+   ```
+3. Add it to `host_permissions` in `extension/manifest.json` too, so Chrome
+   does not prompt her:
+   ```json
+   "host_permissions": ["https://monamour.yourdomain.com/*", "*://*.myntra.com/*", …]
+   ```
+4. **Then** commit and push.
+
+### What she does
+
+1. Your repo → green **Code** button → **Download ZIP**
+2. Unzip it somewhere permanent — Documents, not Downloads, and it has to stay
+   there for as long as she uses the extension
+3. `chrome://extensions` → **Developer mode** on, top right
+4. **Load unpacked** → select the **`extension`** folder *inside* the unzipped
+   folder — not the outer one
+5. Open your site, sign in with the password you gave her. Done.
+
+The extension icon should show a green dot and your domain in the popup. If it
+does not, the address is in the popup's ⚙.
+
+### If the repo is private
+
+She needs a GitHub account and a collaborator invite before she can download
+anything. If you would rather skip that: make the repo public — there are no
+secrets in it, verified — or just send her the unzipped folder over WhatsApp or
+a drive link. She never needs the repo itself, only `extension/`.
+
+### When the Store version lands
+
+She removes the unpacked one at `chrome://extensions` and installs from the
+link. Her wardrobe is untouched — it lives in the database, not the extension.
+
+---
+
 ## Timing, honestly
 
 The site can be live tonight. **The extension cannot.** Web Store review is not
