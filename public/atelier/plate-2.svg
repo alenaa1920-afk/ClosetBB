@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 1000" width="800" height="1000" role="img" aria-label="Atelier plate 2">
+  <defs>
+    <linearGradient id="wash2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#f6e7f0"/>
+      <stop offset="55%" stop-color="#eddcf2"/>
+      <stop offset="100%" stop-color="#dcc7ea"/>
+    </linearGradient>
+    <radialGradient id="bloom2" cx="0.32" cy="0.28" r="0.72">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.78"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="veil2" cx="0.7" cy="0.85" r="0.6">
+      <stop offset="0%" stop-color="#dcc7ea" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#dcc7ea" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#wash2)"/>
+  <rect width="800" height="1000" fill="url(#bloom2)"/>
+  <rect width="800" height="1000" fill="url(#veil2)"/>
+  <g fill="none" stroke="#e6c46a" stroke-opacity="0.5" stroke-width="1.1">
+    <circle cx="400" cy="460" r="200"/>
+    <path d="M170 720 C 300 660, 500 770, 635 760"/>
+  </g>
+  <g fill="#ffffff" fill-opacity="0.5">
+    <circle cx="260" cy="295" r="6"/>
+    <circle cx="500" cy="400" r="4"/>
+    <circle cx="390" cy="780" r="5"/>
+  </g>
+  <text x="400" y="944" text-anchor="middle" font-family="Georgia, serif" font-size="21" letter-spacing="9" fill="#1f2937" fill-opacity="0.34">MON AMOUR</text>
+</svg>

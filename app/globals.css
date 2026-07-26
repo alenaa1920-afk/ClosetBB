@@ -1,0 +1,467 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by a class on <html>, set before first paint. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ------------------------------------------------------------------ *
+ *  Mon Amour — semantic tokens
+ *  Apple restraint · Dior polish · Pinterest warmth
+ * ------------------------------------------------------------------ */
+
+:root {
+  color-scheme: light;
+
+  --bg: #fff8fb;
+  --surface: #ffffff;
+  --surface-raised: #ffffff;
+  --primary: #f472b6;
+  --accent: #ec4899;
+  --petal: #fbcfe8;
+  --ink: #1f2937;
+  --muted: #6b7280;
+  --gold: #e6c46a;
+  --gold-soft: #f2e2b8;
+  --good: #15926b;
+
+  /* Luminous glass hairlines */
+  --line: rgba(255, 255, 255, 0.6);
+  --line-warm: rgba(244, 114, 182, 0.16);
+  --line-ink: rgba(31, 41, 55, 0.08);
+
+  /* Soft glass shadows — never harsh, always diffused */
+  --shadow-veil-value:
+    0 1px 2px rgba(236, 72, 153, 0.04), 0 8px 24px -14px rgba(236, 72, 153, 0.12);
+  --shadow-soft-value:
+    0 1px 2px rgba(236, 72, 153, 0.04), 0 4px 12px -6px rgba(244, 114, 182, 0.14),
+    0 24px 48px -28px rgba(236, 72, 153, 0.22);
+  --shadow-lift-value:
+    0 2px 4px rgba(236, 72, 153, 0.05), 0 12px 28px -10px rgba(244, 114, 182, 0.24),
+    0 40px 80px -32px rgba(236, 72, 153, 0.32);
+  --shadow-halo-value:
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset,
+    0 24px 70px -24px rgba(236, 72, 153, 0.32);
+  --inner-veil: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  --glass-tint: 72%;
+  --glass-tint-quiet: 56%;
+
+  /* Ambient light in the room */
+  --room:
+    radial-gradient(
+      68rem 40rem at 12% -10%,
+      rgba(251, 207, 232, 0.55),
+      transparent 62%
+    ),
+    radial-gradient(
+      52rem 34rem at 92% 4%,
+      rgba(230, 196, 106, 0.14),
+      transparent 60%
+    ),
+    radial-gradient(
+      60rem 50rem at 50% 108%,
+      rgba(244, 114, 182, 0.12),
+      transparent 62%
+    );
+
+  --badge-ground: var(--ink);
+  --badge-tint: 13%;
+  --badge-text: 78%;
+  --badge-ring: 24%;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Deep plum-charcoal — the same house, lit by candlelight */
+  --bg: #14101a;
+  --surface: #1e1826;
+  --surface-raised: #241d2e;
+  --primary: #f489c1;
+  --accent: #f472b6;
+  --petal: #3b2436;
+  --ink: #f6eef4;
+  --muted: #a99fb0;
+  --gold: #e6c46a;
+  --gold-soft: #6b5a33;
+  --good: #34d399;
+
+  --line: rgba(255, 255, 255, 0.09);
+  --line-warm: rgba(244, 114, 182, 0.18);
+  --line-ink: rgba(255, 255, 255, 0.06);
+
+  --shadow-veil-value:
+    0 1px 2px rgba(0, 0, 0, 0.4), 0 8px 24px -14px rgba(0, 0, 0, 0.6);
+  --shadow-soft-value:
+    0 1px 2px rgba(0, 0, 0, 0.45), 0 6px 16px -8px rgba(0, 0, 0, 0.55),
+    0 28px 56px -30px rgba(0, 0, 0, 0.7);
+  --shadow-lift-value:
+    0 2px 6px rgba(0, 0, 0, 0.5), 0 14px 32px -12px rgba(0, 0, 0, 0.6),
+    0 44px 88px -36px rgba(236, 72, 153, 0.28);
+  --shadow-halo-value:
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset,
+    0 24px 70px -24px rgba(236, 72, 153, 0.3);
+  --inner-veil: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  --glass-tint: 78%;
+  --glass-tint-quiet: 62%;
+
+  --room:
+    radial-gradient(
+      68rem 40rem at 12% -10%,
+      rgba(124, 58, 172, 0.28),
+      transparent 62%
+    ),
+    radial-gradient(
+      52rem 34rem at 92% 4%,
+      rgba(230, 196, 106, 0.08),
+      transparent 60%
+    ),
+    radial-gradient(
+      60rem 50rem at 50% 108%,
+      rgba(236, 72, 153, 0.16),
+      transparent 62%
+    );
+
+  --badge-ground: #ffffff;
+  --badge-tint: 24%;
+  --badge-text: 42%;
+  --badge-ring: 34%;
+}
+
+@theme inline {
+  --color-blush: var(--bg);
+  --color-card: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-primary: var(--primary);
+  --color-accent: var(--accent);
+  --color-petal: var(--petal);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-good: var(--good);
+
+  --color-line: var(--line);
+  --color-line-warm: var(--line-warm);
+  --color-line-ink: var(--line-ink);
+
+  --shadow-veil: var(--shadow-veil-value);
+  --shadow-soft: var(--shadow-soft-value);
+  --shadow-lift: var(--shadow-lift-value);
+  --shadow-halo: var(--shadow-halo-value);
+  --shadow-inner-veil: var(--inner-veil);
+
+  /* Rounded corners everywhere */
+  --radius-xs: 0.625rem;
+  --radius-sm: 0.875rem;
+  --radius-md: 1.25rem;
+  --radius-lg: 1.75rem;
+  --radius-xl: 2.25rem;
+  --radius-2xl: 3rem;
+
+  /* Type */
+  --font-display:
+    var(--font-playfair), "Playfair Display", ui-serif, Georgia, serif;
+  --font-sans: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+
+  /* Motion — everything eases like silk */
+  --ease-silk: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-veil: cubic-bezier(0.4, 0, 0.2, 1);
+
+  --animate-heartbeat: heartbeat 2.6s var(--ease-veil) infinite;
+  --animate-drift: drift 24s ease-in-out infinite;
+  --animate-sheen: sheen 2s var(--ease-silk) infinite;
+  --animate-rise: rise 0.7s var(--ease-silk) both;
+  --animate-shimmer: shimmer 1.8s linear infinite;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Keyframes
+ * ------------------------------------------------------------------ */
+
+@keyframes heartbeat {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+  50% {
+    transform: scale(1.14);
+    opacity: 1;
+  }
+}
+
+@keyframes drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.06);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+/* Floating petals — negative animation-delay means the field is already
+   alive on the very first frame, never assembling itself in front of her. */
+@keyframes petal-drift {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+  22% {
+    opacity: var(--petal-opacity, 0.4);
+  }
+  70% {
+    opacity: var(--petal-opacity, 0.4);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--petal-dx, 0px), var(--petal-dy, -100px), 0);
+  }
+}
+
+/* The loader: tiny hearts rising, never a spinner. */
+@keyframes heart-rise {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0) scale(0.5) rotate(-8deg);
+  }
+  25% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  }
+  70% {
+    opacity: 0.9;
+    transform: translate3d(var(--heart-dx, 2px), -14px, 0) scale(0.96) rotate(6deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--heart-dx, 2px), -26px, 0) scale(0.6) rotate(10deg);
+  }
+}
+
+@keyframes sheen {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -180% 0;
+  }
+  100% {
+    background-position: 180% 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  Base
+ * ------------------------------------------------------------------ */
+
+* {
+  border-color: var(--line-warm);
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+  overflow-x: hidden;
+  transition:
+    background-color 0.6s var(--ease-veil),
+    color 0.6s var(--ease-veil);
+}
+
+/* The room the whole app sits in — soft light from above */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: var(--room);
+  transition: background 0.8s var(--ease-veil);
+}
+
+::selection {
+  background: var(--petal);
+  color: var(--ink);
+}
+
+/* Focus rings stay gentle but visible */
+:focus-visible {
+  outline: 2px solid color-mix(in oklab, var(--accent) 62%, transparent);
+  outline-offset: 3px;
+  border-radius: 0.625rem;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--primary) 34%, transparent);
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--accent) 48%, transparent);
+  background-clip: content-box;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Utilities
+ * ------------------------------------------------------------------ */
+
+@utility glass {
+  background: color-mix(in oklab, var(--surface) var(--glass-tint), transparent);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft-value), var(--inner-veil);
+}
+
+@utility glass-quiet {
+  background: color-mix(
+    in oklab,
+    var(--surface) var(--glass-tint-quiet),
+    transparent
+  );
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-veil-value);
+}
+
+/* Fine gold rule used to open editorial sections */
+@utility rule-gold {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--gold) 22%,
+    var(--gold) 78%,
+    transparent
+  );
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Pinterest-style masonry */
+@utility masonry {
+  column-gap: 1.25rem;
+  columns: 1;
+  @media (min-width: 640px) {
+    columns: 2;
+  }
+  @media (min-width: 1024px) {
+    columns: 3;
+  }
+  @media (min-width: 1536px) {
+    columns: 4;
+  }
+}
+
+@utility masonry-item {
+  break-inside: avoid;
+  margin-bottom: 1.25rem;
+}
+
+/* Skeletons breathe rather than blink */
+@utility shimmer {
+  background-image: linear-gradient(
+    100deg,
+    color-mix(in oklab, var(--petal) 30%, transparent) 20%,
+    color-mix(in oklab, var(--petal) 62%, transparent) 42%,
+    color-mix(in oklab, var(--petal) 30%, transparent) 64%
+  );
+  background-size: 220% 100%;
+  animation: shimmer 1.8s linear infinite;
+}
+
+/**
+ * Store badges. The component sets --badge (and --badge-dark for houses whose
+ * signature colour disappears on a dark ground); everything else derives.
+ */
+@utility store-badge {
+  --badge-active: var(--badge, var(--primary));
+  background: color-mix(
+    in oklab,
+    var(--badge-active) var(--badge-tint),
+    transparent
+  );
+  color: color-mix(
+    in oklab,
+    var(--badge-active) var(--badge-text),
+    var(--badge-ground)
+  );
+  border: 1px solid
+    color-mix(in oklab, var(--badge-active) var(--badge-ring), transparent);
+  transition:
+    box-shadow 0.45s var(--ease-silk),
+    background-color 0.45s var(--ease-silk);
+}
+
+.dark .store-badge {
+  --badge-active: var(--badge-dark, var(--badge, var(--primary)));
+}
+
+/* The same colour reduced to a dot, for filter rows. */
+@utility store-swatch {
+  --badge-active: var(--badge, var(--primary));
+  background-color: var(--badge-active);
+}
+
+.dark .store-swatch {
+  --badge-active: var(--badge-dark, var(--badge, var(--primary)));
+}
+
+/* Micro-interaction: the badge glows when its card is hovered. */
+.group:hover .store-badge,
+.store-badge:hover {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--badge-active) 40%, transparent),
+    0 6px 20px -6px color-mix(in oklab, var(--badge-active) 62%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

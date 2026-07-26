@@ -1,0 +1,156 @@
+/**
+ * Content script bridge.
+ *
+ * Answers the popup on request, and — so that saving feels like nothing at all
+ * — announces itself whenever a cart page settles, letting the worker put a
+ * count on the toolbar icon and (if she has it on) save without being asked.
+ */
+
+(function () {
+  "use strict";
+
+  chrome.runtime.onMessage.addListener((message, _sender, respond) => {
+    if (message?.type !== "MON_AMOUR_COLLECT") return false;
+
+    try {
+      const result = self.MonAmourAdapters.collect();
+      respond({ ok: true, ...result, pageUrl: location.href });
+    } catch (error) {
+      respond({ ok: false, error: String(error?.message ?? error) });
+    }
+    return false;
+  });
+
+  /* ---------------------------------------------------------------- *
+   *  Announcing a cart
+   * ---------------------------------------------------------------- */
+
+  let lastSignature = "";
+
+  function announce() {
+    let result;
+    try {
+      result = self.MonAmourAdapters.collect();
+    } catch {
+      return;
+    }
+    if (!result || !result.products.length) return;
+
+    // Only speak up when the contents actually changed.
+    const signature = `${result.products.length}:${result.products
+      .map((product) => `${product.title}@${product.price}`)
+      .join("|")}`;
+    if (signature === lastSignature) return;
+    lastSignature = signature;
+
+    chrome.runtime.sendMessage(
+      {
+        type: "PAGE_ITEMS",
+        pageUrl: location.href,
+        isBagPage: result.isBagPage,
+        strategy: result.strategy,
+        store: result.store,
+        products: result.products,
+      },
+      // The worker may be asleep; a missing reply is not an error.
+      () => void chrome.runtime.lastError,
+    );
+  }
+
+  /* ---------------------------------------------------------------- *
+   *  "Add to bag" — the moment that actually matters
+   *
+   *  Waiting for her to open the cart is one step too many. We watch for the
+   *  press itself and file the piece there and then, with the size she just
+   *  chose. The cart-page sweep below stays as a backstop for anything added
+   *  before the extension was installed.
+   * ---------------------------------------------------------------- */
+
+  const ADD_RE =
+    /\b(add to (bag|cart|basket)|add item|move to bag|buy now|añadir|ajouter)\b/i;
+
+  /** Walk up a few levels: the click usually lands on a span inside a button. */
+  function addToCartControl(target) {
+    let node = target instanceof Element ? target : null;
+    for (let depth = 0; node && depth < 5; depth++, node = node.parentElement) {
+      const label = [
+        node.getAttribute?.("aria-label"),
+        node.getAttribute?.("data-testid"),
+        node.getAttribute?.("title"),
+        node.className && typeof node.className === "string" ? node.className : "",
+        // Only the button's own text, not a whole panel's worth.
+        node.textContent && node.textContent.length < 60 ? node.textContent : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+
+      if (ADD_RE.test(label)) return node;
+      if (/add[-_]?to[-_]?(bag|cart)/i.test(label)) return node;
+    }
+    return null;
+  }
+
+  let lastAddAt = 0;
+
+  function onAddToCart() {
+    // Double-clicks and bubbling both fire; one save is enough.
+    const now = Date.now();
+    if (now - lastAddAt < 3000) return;
+    lastAddAt = now;
+
+    // Let the site register the choice before we read the page.
+    setTimeout(() => {
+      let product;
+      try {
+        product = self.MonAmourAdapters.collectCurrent();
+      } catch {
+        return;
+      }
+      if (!product?.title) return;
+
+      chrome.runtime.sendMessage(
+        { type: "ADD_TO_CART", pageUrl: location.href, product },
+        () => void chrome.runtime.lastError,
+      );
+    }, 900);
+  }
+
+  document.addEventListener(
+    "click",
+    (event) => {
+      if (addToCartControl(event.target)) onAddToCart();
+    },
+    // Capture, so we still see it if the site stops propagation.
+    { capture: true, passive: true },
+  );
+
+  /** Carts render in stages, so wait for the DOM to go quiet. */
+  let settleTimer = null;
+  function scheduleAnnounce(delay = 900) {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(announce, delay);
+  }
+
+  scheduleAnnounce(1200);
+
+  const observer = new MutationObserver(() => scheduleAnnounce());
+  observer.observe(document.documentElement, {
+    childList: true,
+    subtree: true,
+  });
+
+  // These sites are single-page apps: navigation does not reload the script.
+  for (const method of ["pushState", "replaceState"]) {
+    const original = history[method];
+    history[method] = function patched(...args) {
+      const result = original.apply(this, args);
+      lastSignature = "";
+      scheduleAnnounce(1200);
+      return result;
+    };
+  }
+  window.addEventListener("popstate", () => {
+    lastSignature = "";
+    scheduleAnnounce(1200);
+  });
+})();

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mon Amour</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="head">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="15" height="15">
+          <path
+            d="M12 20.5s-7.5-4.7-7.5-10A4.5 4.5 0 0 1 12 7.7a4.5 4.5 0 0 1 7.5 2.8c0 5.3-7.5 10-7.5 10Z"
+            fill="#fff"
+          />
+        </svg>
+      </span>
+      <div class="head-text">
+        <h1>Mon Amour</h1>
+        <p id="context">Reading this page…</p>
+      </div>
+      <button
+        id="settings-toggle"
+        class="icon-button"
+        title="Settings"
+        aria-label="Settings"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.7"
+        >
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M12 2v3m0 14v3M4.2 4.2l2.1 2.1m11.4 11.4 2.1 2.1M2 12h3m14 0h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"
+          />
+        </svg>
+      </button>
+    </header>
+
+    <p id="connected" class="conn"></p>
+
+    <section id="settings" class="panel settings" hidden>
+      <label class="field">
+        <span>Mon Amour address</span>
+        <input
+          id="app-url"
+          type="url"
+          placeholder="http://localhost:3000"
+          spellcheck="false"
+        />
+      </label>
+      <button id="save-url" class="button ghost">Use this address</button>
+      <p class="hint">Chrome will ask permission for the address the first time.</p>
+
+      <hr class="rule" />
+
+      <label class="switch">
+        <input id="auto-save" type="checkbox" />
+        <span>
+          Save carts automatically
+          <small>Open a cart and it files itself. No button to press.</small>
+        </span>
+      </label>
+
+      <hr class="rule" />
+
+      <p class="hint">
+        Zara, H&amp;M and Ajio refuse our server, so their prices are re-read from
+        this browser every few hours.
+      </p>
+      <button id="watch-now" class="button ghost">Check prices now</button>
+      <p id="watch-status" class="hint"></p>
+    </section>
+
+    <main id="body">
+      <div id="loader" class="loader" role="status">
+        <span class="heart"></span>
+        <span class="heart"></span>
+        <span class="heart"></span>
+        <p>Looking through the page…</p>
+      </div>
+
+      <div id="notice" class="panel notice" hidden></div>
+
+      <div id="results" hidden>
+        <div class="results-head">
+          <label class="check-all">
+            <input id="select-all" type="checkbox" checked />
+            <span id="results-count">0 pieces</span>
+          </label>
+          <span id="strategy" class="strategy"></span>
+        </div>
+        <ul id="list" class="list"></ul>
+      </div>
+    </main>
+
+    <footer class="foot">
+      <button id="rescan" class="button ghost">Scan again</button>
+      <button id="save" class="button primary" disabled>Save to Mon Amour</button>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
