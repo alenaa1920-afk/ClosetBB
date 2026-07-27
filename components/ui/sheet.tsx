@@ -128,12 +128,23 @@ export function Sheet({
               </button>
             </header>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 pb-6 sm:px-8">
+            <div
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6 sm:px-8"
+              style={{
+                // Room for the home indicator when there is no footer below.
+                paddingBottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))",
+              }}
+            >
               {children}
             </div>
 
             {footer ? (
-              <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line-warm bg-card/40 px-6 py-4 sm:px-8">
+              <footer
+                className="flex flex-wrap items-center justify-end gap-3 border-t border-line-warm bg-card/40 px-6 py-4 sm:px-8"
+                style={{
+                  paddingBottom: "calc(1rem + env(safe-area-inset-bottom, 0px))",
+                }}
+              >
                 {footer}
               </footer>
             ) : null}

@@ -28,7 +28,7 @@ export function Navbar({ onAdd }: { onAdd?: () => void }) {
   });
 
   return (
-    <header className="sticky top-0 z-50">
+    <header className="pad-safe-top sticky top-0 z-50">
       <div
         className={cn(
           "border-b bg-card/65 backdrop-blur-2xl backdrop-saturate-150",
@@ -36,7 +36,13 @@ export function Navbar({ onAdd }: { onAdd?: () => void }) {
           lifted ? "border-line-warm bg-card/85 shadow-veil" : "border-transparent",
         )}
       >
-        <div className="mx-auto flex h-[4.5rem] max-w-[100rem] items-center gap-3 px-4 sm:gap-5 sm:px-7">
+        <div
+          className="mx-auto flex h-[4.5rem] max-w-[100rem] items-center gap-3 px-4 sm:gap-5 sm:px-7"
+          style={{
+            paddingLeft: "max(1rem, env(safe-area-inset-left, 0px))",
+            paddingRight: "max(1rem, env(safe-area-inset-right, 0px))",
+          }}
+        >
           <Link
             href="/"
             className="group flex shrink-0 items-center gap-2.5"

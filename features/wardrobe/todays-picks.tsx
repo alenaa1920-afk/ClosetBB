@@ -54,8 +54,9 @@ export function TodaysPicks({
             onClick={() => onOpen(product.id)}
             className={cn(
               "group relative w-[10.5rem] shrink-0 snap-start overflow-hidden rounded-md",
-              "border border-line bg-card/80 text-left backdrop-blur-xl shadow-veil",
+              "card-glass border border-line text-left shadow-veil",
               "transition-shadow duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:shadow-lift",
+              "active:scale-[0.98] active:transition-transform active:duration-150",
               "sm:w-[12rem]",
             )}
             initial={{ opacity: 0, x: 22 }}

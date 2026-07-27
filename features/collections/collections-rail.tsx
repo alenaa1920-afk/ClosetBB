@@ -105,10 +105,10 @@ export function CollectionsRail() {
                 }}
                 className={cn(
                   "flex h-[4.75rem] min-w-[10.5rem] items-center gap-3 rounded-md border px-4 text-left",
-                  "backdrop-blur-xl transition-[background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  "transition-[background-color,border-color,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   active
                     ? "border-accent/40 bg-petal/70 shadow-veil"
-                    : "border-line bg-card/70 hover:bg-card/90",
+                    : "card-glass border-line hover:bg-card/90",
                   isDropTarget &&
                     "border-accent bg-petal/80 shadow-lift ring-2 ring-accent/30",
                 )}
@@ -137,7 +137,7 @@ export function CollectionsRail() {
               </motion.button>
 
               {/* Quiet controls, only on hover or focus */}
-              <div className="absolute -top-1.5 -right-1.5 flex gap-1 opacity-0 transition-opacity duration-300 group-hover/collection:opacity-100 focus-within:opacity-100">
+              <div className="reveal-on-hover absolute -top-1.5 -right-1.5 flex gap-1 opacity-0 transition-opacity duration-300 group-hover/collection:opacity-100 focus-within:opacity-100">
                 <button
                   type="button"
                   aria-label={`Rename ${collection.name}`}

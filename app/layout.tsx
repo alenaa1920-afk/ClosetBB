@@ -28,10 +28,19 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#FFF8FB",
+  // Two colours so the iPhone status bar matches the palette she is in.
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FFF8FB" },
+    { media: "(prefers-color-scheme: dark)", color: "#14101A" },
+  ],
   width: "device-width",
   initialScale: 1,
+  // Pinch-zoom stays available — capping it would fail accessibility. iOS's
+  // focus-zoom is prevented by giving inputs a 16px font instead.
   maximumScale: 5,
+  // Paint under the Dynamic Island and the home indicator; the layout then
+  // insets itself with env(safe-area-inset-*).
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

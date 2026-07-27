@@ -57,7 +57,10 @@ export function FilterBar({
   }
 
   return (
-    <div className="sticky top-[4.5rem] z-40 -mx-4 mb-8 px-4 sm:-mx-7 sm:px-7">
+    <div
+      className="sticky z-40 -mx-4 mb-8 px-4 sm:-mx-7 sm:px-7"
+      style={{ top: "calc(var(--navbar-h) + env(safe-area-inset-top, 0px))" }}
+    >
       <div className="rounded-lg border border-line bg-card/70 px-3 py-3 backdrop-blur-2xl backdrop-saturate-150 shadow-veil sm:px-4">
         <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
           <span className="hidden shrink-0 items-center gap-2 pr-1 pl-1 text-[0.7rem] font-medium tracking-[0.18em] text-muted uppercase lg:flex">

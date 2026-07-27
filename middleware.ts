@@ -67,6 +67,11 @@ export const config = {
      * Everything except static assets, images and the extension's own
      * bearer-token endpoint, which authenticates itself.
      */
-    "/((?!_next/static|_next/image|favicon.ico|api/extension|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
+    /*
+     * `manifest.webmanifest` must stay public: iOS fetches it without
+     * credentials when adding to the home screen, and a redirect to /login
+     * turns the icon and name into Safari's defaults.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|api/extension|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)",
   ],
 };

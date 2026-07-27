@@ -74,7 +74,12 @@ export function Dashboard() {
     <div className="min-h-dvh">
       <Navbar onAdd={openAdd} />
 
-      <main className="mx-auto max-w-[100rem] px-4 pt-8 pb-28 sm:px-7 sm:pb-20">
+      <main
+        className="mx-auto max-w-[100rem] px-4 pt-8 pb-28 sm:px-7 sm:pb-20"
+        style={{
+          paddingBottom: "calc(7rem + env(safe-area-inset-bottom, 0px))",
+        }}
+      >
         {status === "loading" || status === "idle" ? (
           <LoadingWardrobe />
         ) : status === "error" ? (
@@ -133,6 +138,8 @@ export function Dashboard() {
         onClick={openAdd}
         aria-label="Add a piece"
         className="fixed right-5 bottom-6 z-50 inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/25 bg-[linear-gradient(135deg,var(--primary),var(--accent))] text-white shadow-lift sm:hidden"
+        // Clear of the iPhone's home indicator.
+        style={{ bottom: "calc(1.5rem + env(safe-area-inset-bottom, 0px))" }}
         whileTap={{ scale: 0.92 }}
         initial={{ opacity: 0, scale: 0.6 }}
         animate={{ opacity: 1, scale: 1 }}

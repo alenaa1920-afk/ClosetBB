@@ -66,9 +66,11 @@ function ProductCardBase({
           }
         }}
         className={cn(
-          "relative cursor-pointer overflow-hidden rounded-lg border border-line bg-card/80 backdrop-blur-xl",
+          "card-glass relative cursor-pointer overflow-hidden rounded-lg border border-line",
           "shadow-veil transition-shadow duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
           "group-hover:shadow-lift",
+          // A little give under the thumb, since there is no hover to answer.
+          "active:scale-[0.995] active:transition-transform active:duration-150",
         )}
       >
         <div className="relative overflow-hidden">
@@ -122,7 +124,9 @@ function ProductCardBase({
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border border-white/25 bg-card/85 px-3.5 py-1.5",
                   "text-[0.72rem] font-medium text-ink backdrop-blur-xl shadow-veil",
-                  "translate-y-3 opacity-0 transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  // `reveal-on-hover` pins this open on touch screens, where
+                  // there is no hover and it would otherwise never appear.
+                  "reveal-on-hover translate-y-3 opacity-0 transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
                   "group-hover:translate-y-0 group-hover:opacity-100 focus-visible:translate-y-0 focus-visible:opacity-100",
                 )}
               >
