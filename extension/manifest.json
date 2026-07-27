@@ -32,6 +32,8 @@
     "tabs"
   ],
   "host_permissions": [
+    "https://miamor.sbs/*",
+    "https://www.miamor.sbs/*",
     "http://localhost/*",
     "http://127.0.0.1/*",
     "*://*.myntra.com/*",
@@ -62,7 +64,12 @@
       "run_at": "document_idle"
     },
     {
-      "matches": ["http://localhost/*", "http://127.0.0.1/*"],
+      "matches": [
+        "https://miamor.sbs/*",
+        "https://www.miamor.sbs/*",
+        "http://localhost/*",
+        "http://127.0.0.1/*"
+      ],
       "js": ["content/session-bridge.js"],
       "run_at": "document_idle"
     }

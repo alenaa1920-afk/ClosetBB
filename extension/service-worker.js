@@ -19,7 +19,7 @@ importScripts("price-reader.js");
  *
  *  Leave it empty during local development.
  * ------------------------------------------------------------------ */
-const PRODUCTION_APP_URL = "";
+const PRODUCTION_APP_URL = "https://miamor.sbs";
 
 const DEFAULT_APP_URL = PRODUCTION_APP_URL || "http://localhost:3000";
 const TOKEN_KEY = "monAmourToken";
@@ -52,11 +52,17 @@ async function probeApp(origin) {
     const response = await fetch(`${origin}/api/extension/products`, {
       cache: "no-store",
     });
-    if (!response.ok) return false;
+    if (!response.ok) return null;
     const payload = await response.json().catch(() => null);
-    return payload?.app === "mon-amour";
+    if (payload?.app !== "mon-amour") return null;
+
+    // Return where we actually landed. `miamor.sbs` redirects to
+    // `www.miamor.sbs` (or the other way round, depending on which is set as
+    // primary), and the session cookie belongs to whichever answered — so it
+    // is the resolved origin we must remember, not the one we asked for.
+    return new URL(response.url).origin;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -70,19 +76,35 @@ async function appUrl() {
  * handful of ports a local dev server uses. Only ever settles on something
  * that identifies itself as Mon Amour.
  */
-async function detectAppUrl() {
-  const stored = (await chrome.storage.sync.get("appUrl")).appUrl;
-  if (stored && (await probeApp(stored))) return stored;
+function isLocal(url) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)/.test(url ?? "");
+}
 
-  // Production first — that is where she is, and it is the common case.
+async function detectAppUrl() {
+  const { appUrl: stored, appUrlPinned } = await chrome.storage.sync.get([
+    "appUrl",
+    "appUrlPinned",
+  ]);
+
+  // An address she typed herself always wins, as long as it still answers.
+  if (stored && appUrlPinned) {
+    const resolved = await probeApp(stored);
+    if (resolved) return resolved;
+  }
+
+  // Otherwise prefer production over a leftover localhost: a developer's own
+  // dev server should never be what a packed extension quietly settles on.
   const candidates = [
     ...(PRODUCTION_APP_URL ? [PRODUCTION_APP_URL] : []),
+    ...(stored && !isLocal(stored) ? [stored] : []),
     ...LOCAL_CANDIDATES,
   ];
+
   for (const candidate of candidates) {
-    if (await probeApp(candidate)) {
-      await chrome.storage.sync.set({ appUrl: candidate });
-      return candidate;
+    const resolved = await probeApp(candidate);
+    if (resolved) {
+      await chrome.storage.sync.set({ appUrl: resolved });
+      return resolved;
     }
   }
   return stored || DEFAULT_APP_URL;
@@ -527,7 +549,7 @@ const HANDLERS = {
       return { appUrl: base, granted: false, identified: false, signedIn: false };
     }
 
-    const identified = await probeApp(base);
+    const identified = Boolean(await probeApp(base));
     if (!identified) {
       return {
         appUrl: base,
@@ -598,18 +620,20 @@ const HANDLERS = {
 
     // Refuse to point at something that is not Mon Amour, rather than saving
     // the address and failing mysteriously later.
-    if (!(await probeApp(parsed.origin))) {
+    const resolved = await probeApp(parsed.origin);
+    if (!resolved) {
       throw new Error(
         `${parsed.origin} did not answer as Mon Amour. Is the app running there?`,
       );
     }
 
-    await chrome.storage.sync.set({ appUrl: parsed.origin });
+    // Pinned: a deliberate choice outranks auto-detection from now on.
+    await chrome.storage.sync.set({ appUrl: resolved, appUrlPinned: true });
     await chrome.storage.local.remove(TOKEN_KEY);
     // The bridge only ships statically for localhost; register it for whatever
     // address she just pointed us at.
-    await registerSessionBridge(parsed.origin);
-    return { appUrl: parsed.origin };
+    await registerSessionBridge(resolved);
+    return { appUrl: resolved };
   },
 };
 
