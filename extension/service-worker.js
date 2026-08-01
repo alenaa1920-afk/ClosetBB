@@ -743,6 +743,11 @@ const HANDLERS = {
     };
   },
 
+  /**
+   * Called once the popup already holds permission. `permissions.request`
+   * needs a user gesture in a foreground page and throws outright in a
+   * service worker, so the asking happens there and the wiring here.
+   */
   async SET_EVERYWHERE({ enabled }) {
     if (!enabled) {
       await chrome.storage.sync.set({ everywhere: false });
@@ -750,14 +755,10 @@ const HANDLERS = {
       return { everywhere: false };
     }
 
-    const granted = await chrome.permissions.request({
-      origins: EVERYWHERE_MATCHES,
-    });
-    if (!granted) {
-      throw new Error("Chrome declined access to other sites.");
-    }
-
     const registered = await registerEverywhere();
+    if (!registered) {
+      throw new Error("Access to other sites was not granted.");
+    }
     await chrome.storage.sync.set({ everywhere: registered });
     // Start working on what is already open, rather than after a reload.
     if (registered) await adoptEveryOpenTab();
@@ -782,7 +783,8 @@ const HANDLERS = {
       throw new Error("Use an http or https address.");
     }
 
-    const granted = await chrome.permissions.request({
+    // The popup requests permission first, for the same reason.
+    const granted = await chrome.permissions.contains({
       origins: [matchPatternFor(parsed.origin)],
     });
     if (!granted) throw new Error("Permission for that address was declined.");

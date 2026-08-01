@@ -47,6 +47,23 @@ function ask(message) {
   });
 }
 
+/**
+ * Chrome only grants new permissions from a foreground page acting on a
+ * user gesture. Asking from the service worker throws, so it happens here
+ * and the worker is told afterwards.
+ */
+function requestOrigins(origins) {
+  return new Promise((resolve) => {
+    chrome.permissions.request({ origins }, (granted) => {
+      if (chrome.runtime.lastError) {
+        resolve(false);
+        return;
+      }
+      resolve(Boolean(granted));
+    });
+  });
+}
+
 function askTab(tabId, message) {
   return new Promise((resolve) => {
     chrome.tabs.sendMessage(tabId, message, (reply) => {
@@ -318,6 +335,16 @@ el.settingsToggle.addEventListener("click", () => {
 
 el.everywhere.addEventListener("change", async () => {
   const wanted = el.everywhere.checked;
+
+  if (wanted) {
+    const granted = await requestOrigins(["http://*/*", "https://*/*"]);
+    if (!granted) {
+      el.everywhere.checked = false;
+      notice("Chrome declined access to other sites.", "warn");
+      return;
+    }
+  }
+
   const reply = await ask({ type: "SET_EVERYWHERE", enabled: wanted });
 
   if (!reply.ok) {
@@ -362,6 +389,21 @@ el.watchNow.addEventListener("click", async () => {
 });
 
 el.saveUrl.addEventListener("click", async () => {
+  let origins;
+  try {
+    const parsed = new URL(el.appUrl.value.trim());
+    // Match patterns cannot carry a port.
+    origins = [`${parsed.protocol}//${parsed.hostname}/*`];
+  } catch {
+    notice("That does not look like an address.", "warn");
+    return;
+  }
+
+  if (!(await requestOrigins(origins))) {
+    notice("Chrome declined permission for that address.", "warn");
+    return;
+  }
+
   const reply = await ask({ type: "SET_APP_URL", url: el.appUrl.value });
   if (!reply.ok) {
     notice(reply.error, "warn");

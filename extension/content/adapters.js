@@ -937,6 +937,82 @@
     };
   }
 
+  /* ---------------------------------------------------------------- *
+   *  Reading a page that offers no structured data
+   *
+   *  Plenty of smaller shops ship neither JSON-LD nor OpenGraph tags. What
+   *  they always have is the product visible on screen, so fall back to
+   *  reading it the way a person would: the heading, the biggest picture,
+   *  and the price nearest the buy button.
+   * ---------------------------------------------------------------- */
+
+  function visibleTitle() {
+    for (const selector of [
+      "h1",
+      '[class*="product-title"]',
+      '[class*="product-name"]',
+      '[class*="productTitle"]',
+      '[itemprop="name"]',
+    ]) {
+      const text = clean(document.querySelector(selector)?.textContent);
+      if (text && text.length > 2 && text.length < 200) return text;
+    }
+    // Page titles usually carry the shop name; drop the tail.
+    const title = clean(document.title).split(/\s[|\u2013\u2014-]\s/)[0];
+    return title && title.length > 2 ? title : null;
+  }
+
+  /** The biggest picture on the page that is not a logo or an icon. */
+  function visibleImage() {
+    let best = null;
+    let bestArea = 0;
+
+    for (const img of document.images) {
+      const source = img.currentSrc || img.src || "";
+      if (!source || source.startsWith("data:")) continue;
+      if (/logo|sprite|icon|placeholder|badge/i.test(source)) continue;
+
+      const rect = img.getBoundingClientRect();
+      const area = Math.max(rect.width * rect.height, 0);
+      // Product shots are large and portrait-ish; navigation art is not.
+      if (rect.width < 120 || rect.height < 120) continue;
+      if (area > bestArea) {
+        bestArea = area;
+        best = source;
+      }
+    }
+    return absolute(best);
+  }
+
+  /**
+   * The price, preferring whatever sits closest to the add-to-cart button —
+   * a product page is usually littered with other numbers.
+   */
+  function visiblePrice() {
+    const labelled = firstText(document.body, [
+      '[class*="product-price"]',
+      '[class*="productPrice"]',
+      '[class*="price-item--sale"]',
+      '[class*="price__current"]',
+      '[itemprop="price"]',
+      '[class*="current-price"]',
+      '[class*="sale-price"]',
+      '[data-testid*="price"]',
+    ]);
+    const direct = parseMoney(labelled);
+    if (direct) return { price: direct, originalPrice: null };
+
+    const found = allPrices(clean(document.body.textContent).slice(0, 6000));
+    if (!found.length) return { price: null, originalPrice: null };
+
+    // Two figures side by side is nearly always sale-then-original.
+    const price = Math.min(...found);
+    const highest = Math.max(...found);
+    return {
+      price,
+      originalPrice: highest > price ? highest : null,
+    };
+  }
   /**
    * The single piece this product page is about, with the size she picked.
    *
@@ -951,24 +1027,21 @@
     const found = dedupe(collectFromJsonLd(storeKey));
     const product = found[0] ?? null;
 
-    if (!product) {
-      // No structured data — fall back to the page's social metadata.
-      const meta = (key) =>
-        document
-          .querySelector(`meta[property="${key}"], meta[name="${key}"]`)
-          ?.getAttribute("content") ?? null;
+    // Whatever the page shows on screen, used to fill any gaps.
+    const seen = visiblePrice();
 
-      const title = clean(meta("og:title") || document.title);
+    if (!product) {
+      const title = visibleTitle();
       if (!title) return null;
 
       return {
         title,
         brand: null,
         store: storeKey,
-        price: parseMoney(meta("product:price:amount") || meta("og:price:amount")),
-        originalPrice: null,
-        currency: (meta("product:price:currency") || "INR").toUpperCase(),
-        imageUrl: absolute(meta("og:image")),
+        price: seen.price,
+        originalPrice: seen.originalPrice,
+        currency: "INR",
+        imageUrl: visibleImage(),
         productUrl: location.href,
         size: readSelectedSize(document),
         sizesAvailable: readSizesAvailable(document.body),
@@ -981,9 +1054,15 @@
         availability: readAvailability(document.body),
       };
     }
-
     return {
       ...product,
+      // Structured data is often partial: a name and nothing else. Anything
+      // it left blank is filled from what the page actually shows, so a
+      // piece never lands in her wardrobe as an empty card.
+      title: product.title || visibleTitle(),
+      imageUrl: product.imageUrl || visibleImage(),
+      price: product.price ?? seen.price,
+      originalPrice: product.originalPrice ?? seen.originalPrice,
       productUrl: product.productUrl || location.href,
       size: readSelectedSize(document) ?? product.size ?? null,
       quantity: product.quantity ?? 1,
