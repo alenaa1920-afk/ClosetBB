@@ -666,6 +666,44 @@ async function onWake() {
   await adoptOpenTabs();
 }
 
+/**
+ * Put the collector into every page we are allowed to touch, as it loads.
+ *
+ * Declared content scripts only cover the seven built-in shops, and a
+ * dynamically registered one only takes effect on the next navigation. This
+ * listener closes the gap: the moment a page finishes loading on a site we
+ * hold permission for, the collector goes in — so saving works without her
+ * ever opening the popup.
+ *
+ * Registering the listener at the top level is what lets Chrome wake the
+ * worker for it after it has been idled out.
+ */
+chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+  if (info.status !== "complete") return;
+  if (!tab.url || !/^https?:/.test(tab.url)) return;
+
+  void (async () => {
+    let origin;
+    try {
+      origin = new URL(tab.url).origin;
+    } catch {
+      return;
+    }
+
+    // Only where she has actually granted access; never ask from here.
+    if (!(await hasHostAccess(origin))) return;
+
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId },
+        files: ["content/adapters.js", "content/collect.js"],
+      });
+    } catch {
+      // A page that refuses injection, or a tab that has already gone.
+    }
+  })();
+});
+
 chrome.runtime.onInstalled.addListener(() => void onWake());
 chrome.runtime.onStartup.addListener(() => void onWake());
 
@@ -763,6 +801,36 @@ const HANDLERS = {
     // Start working on what is already open, rather than after a reload.
     if (registered) await adoptEveryOpenTab();
     return { everywhere: registered };
+  },
+
+  /**
+   * Called after the popup has been granted a single site. Injects there
+   * straight away so the current page starts working without a reload.
+   */
+  async ADOPT_SITE({ origin }) {
+    if (!(await hasHostAccess(origin))) {
+      throw new Error("Permission for that site was not granted.");
+    }
+
+    let tabs = [];
+    try {
+      tabs = await chrome.tabs.query({ url: `${origin}/*` });
+    } catch {
+      tabs = [];
+    }
+
+    for (const tab of tabs) {
+      if (!tab.id) continue;
+      try {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ["content/adapters.js", "content/collect.js"],
+        });
+      } catch {
+        // Not injectable; nothing to be done.
+      }
+    }
+    return { adopted: true, tabs: tabs.length };
   },
 
   async GET_AUTO_SAVE() {

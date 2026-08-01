@@ -463,3 +463,12 @@ main {
 .conn.bad::before {
   content: "● ";
 }
+
+#site-grant {
+  margin-bottom: 10px;
+}
+
+#site-grant .button {
+  margin-top: 10px;
+  width: 100%;
+}

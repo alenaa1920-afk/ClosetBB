@@ -26,6 +26,9 @@ const el = {
   connected: document.getElementById("connected"),
   autoState: document.getElementById("auto-state"),
   everywhere: document.getElementById("everywhere"),
+  siteGrant: document.getElementById("site-grant"),
+  siteGrantText: document.getElementById("site-grant-text"),
+  siteGrantButton: document.getElementById("site-grant-button"),
 };
 
 let found = [];
@@ -180,6 +183,15 @@ async function scan() {
 
   el.context.textContent = new URL(tab.url).hostname.replace(/^www\./, "");
 
+  // Without standing permission for this site the extension can only act
+  // while the popup is open — which is exactly the 'I have to click it
+  // every time' problem. Offer to fix it permanently, here, in one press.
+  const origin = new URL(tab.url).origin;
+  const permanent = await chrome.permissions.contains({
+    origins: [`${origin}/*`],
+  });
+  showSiteGrant(permanent ? null : origin);
+
   let reply = await askTab(tab.id, { type: "MON_AMOUR_COLLECT" });
 
   // Not a site the manifest covers — inject on demand via activeTab.
@@ -227,6 +239,31 @@ async function scan() {
   }
 
   render();
+}
+
+/**
+ * Shows the one-press offer to save from this shop for good.
+ * `null` hides it.
+ */
+function showSiteGrant(origin) {
+  if (!origin) {
+    show(el.siteGrant, false);
+    return;
+  }
+  const host = origin.replace(/^https?:\/\//, "").replace(/^www\./, "");
+  el.siteGrantText.textContent = `Mon Amour can only watch ${host} while this popup is open.`;
+  el.siteGrantButton.textContent = `Always save from ${host}`;
+  el.siteGrantButton.onclick = async () => {
+    const granted = await requestOrigins([`${origin}/*`]);
+    if (!granted) {
+      notice("Chrome declined access to that site.", "warn");
+      return;
+    }
+    await ask({ type: "ADOPT_SITE", origin });
+    show(el.siteGrant, false);
+    notice(`${host} will save by itself from now on. \u2665`, "good");
+  };
+  show(el.siteGrant, true);
 }
 
 async function refreshStatus() {
