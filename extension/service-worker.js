@@ -372,11 +372,24 @@ async function onPageItems(message, sender) {
  * She pressed "Add to bag". File it now, with the size she just chose —
  * she should never have to open the cart, let alone press anything of ours.
  */
+/** Leaves a trace of the last automatic attempt, for the popup to show. */
+async function noteAuto(entry) {
+  await chrome.storage.local.set({
+    lastAuto: { at: Date.now(), ...entry },
+  });
+}
+
 async function onAddToCart(message, sender) {
   const tabId = sender?.tab?.id;
   const product = message?.product;
-  if (!product?.title) return { saved: 0 };
-  if (!(await autoSaveEnabled())) return { saved: 0, skipped: "auto-save-off" };
+  if (!product?.title) {
+    await noteAuto({ outcome: "nothing readable on the page" });
+    return { saved: 0 };
+  }
+  if (!(await autoSaveEnabled())) {
+    await noteAuto({ outcome: "auto-save is switched off", title: product.title });
+    return { saved: 0, skipped: "auto-save-off" };
+  }
 
   const signature = `add:${product.productUrl || product.title}:${product.size ?? ""}`;
   const { autoSaveLog = {} } = await chrome.storage.session.get("autoSaveLog");
@@ -404,6 +417,11 @@ async function onAddToCart(message, sender) {
     return result;
   } catch (error) {
     console.warn("[mon amour] add-to-cart save failed:", error.message);
+    await noteAuto({
+      outcome: "failed",
+      title: product.title,
+      error: error.message,
+    });
     if (tabId != null) {
       await chrome.action.setBadgeText({ tabId, text: "!" });
       await chrome.action.setBadgeBackgroundColor({ tabId, color: "#E6C46A" });
@@ -525,9 +543,42 @@ async function registerSessionBridge(origin) {
   }
 }
 
+/**
+ * Puts the collector into shop tabs that are already open.
+ *
+ * Content scripts are injected on navigation, so every tab opened before the
+ * extension was installed or reloaded has no listener in it — the popup still
+ * works there, because it injects on demand, but nothing saves by itself. That
+ * asymmetry looks exactly like "auto-save is broken".
+ */
+async function adoptOpenTabs() {
+  const [collector] = chrome.runtime.getManifest().content_scripts ?? [];
+  if (!collector) return;
+
+  let tabs = [];
+  try {
+    tabs = await chrome.tabs.query({ url: collector.matches });
+  } catch {
+    return;
+  }
+
+  for (const tab of tabs) {
+    if (!tab.id) continue;
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: collector.js,
+      });
+    } catch {
+      // Chrome's own pages, or a tab that closed mid-flight.
+    }
+  }
+}
+
 async function onWake() {
   await ensureAlarm();
   await registerSessionBridge(await appUrl());
+  await adoptOpenTabs();
 }
 
 chrome.runtime.onInstalled.addListener(() => void onWake());
@@ -560,6 +611,9 @@ const HANDLERS = {
       };
     }
 
+    const { lastAuto } = await chrome.storage.local.get("lastAuto");
+    const autoSave = await autoSaveEnabled();
+
     try {
       const session = await token();
       return {
@@ -568,6 +622,8 @@ const HANDLERS = {
         identified: true,
         signedIn: true,
         email: session.email,
+        autoSave,
+        lastAuto: lastAuto ?? null,
       };
     } catch (error) {
       return {

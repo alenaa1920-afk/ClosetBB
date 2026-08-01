@@ -24,6 +24,7 @@ const el = {
   watchStatus: document.getElementById("watch-status"),
   autoSave: document.getElementById("auto-save"),
   connected: document.getElementById("connected"),
+  autoState: document.getElementById("auto-state"),
 };
 
 let found = [];
@@ -218,6 +219,30 @@ async function refreshStatus() {
     ? `${status.identified ? "connected to" : "pointing at"} ${status.appUrl.replace(/^https?:\/\//, "")}`
     : "";
   el.connected.className = status.identified ? "conn ok" : "conn bad";
+
+  // What automatic saving last did — so "it is not saving" is never a mystery.
+  if (status.identified && status.signedIn) {
+    const last = status.lastAuto;
+    if (!status.autoSave) {
+      el.autoState.textContent = "automatic saving is off";
+      el.autoState.className = "conn bad";
+    } else if (!last) {
+      el.autoState.textContent = "automatic saving on · nothing captured yet";
+      el.autoState.className = "conn";
+    } else {
+      const mins = Math.round((Date.now() - last.at) / 60000);
+      const when =
+        mins < 1
+          ? "just now"
+          : mins < 60
+            ? mins + "m ago"
+            : Math.round(mins / 60) + "h ago";
+      el.autoState.textContent = `last automatic: ${last.outcome}${last.title ? " — " + last.title.slice(0, 34) : ""} · ${when}`;
+      el.autoState.className = last.outcome === "saved" ? "conn ok" : "conn bad";
+    }
+  } else {
+    el.autoState.textContent = "";
+  }
 
   if (!status.granted) {
     notice(

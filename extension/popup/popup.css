@@ -444,7 +444,7 @@ main {
 
 /* Which Mon Amour are we talking to? Never leave this a mystery. */
 .conn {
-  padding: 6px 14px 0;
+  padding: 4px 14px 0;
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;

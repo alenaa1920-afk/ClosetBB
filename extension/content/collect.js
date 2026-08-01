@@ -93,9 +93,17 @@
   let lastAddAt = 0;
 
   function onAddToCart() {
-    // Double-clicks and bubbling both fire; one save is enough.
+    /**
+     * Only long enough to swallow a double-click and the capture/bubble pair.
+     *
+     * It used to be three seconds, which broke the common flow: pressing "Add
+     * to bag" without a size opens the size picker, and the *real* press a
+     * moment later landed inside the window and was thrown away. Genuine
+     * duplicates are caught by the worker's signature cooldown instead, which
+     * keys on the piece rather than on the clock.
+     */
     const now = Date.now();
-    if (now - lastAddAt < 3000) return;
+    if (now - lastAddAt < 800) return;
     lastAddAt = now;
 
     // Let the site register the choice before we read the page.
