@@ -476,6 +476,33 @@ function firstString(value: unknown): string | null {
   return null;
 }
 
+/**
+ * Like `firstString`, but for fields that must yield a URL.
+ *
+ * `name` is deliberately absent. Shopify and others ship images as
+ * `{ "@type": "ImageObject", "name": "...", "url": "..." }`, and a generic
+ * walk picks the name — which then resolves against the page as a link that
+ * is not an image, and the photograph silently vanishes.
+ */
+function firstUrlString(value: unknown): string | null {
+  if (typeof value === "string") return decodeEntities(value) || null;
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const found = firstUrlString(entry);
+      if (found) return found;
+    }
+    return null;
+  }
+  if (isBag(value)) {
+    for (const key of ["url", "contentUrl", "src", "@id"]) {
+      if (key in value) {
+        const found = firstUrlString(value[key]);
+        if (found) return found;
+      }
+    }
+  }
+  return null;
+}
 function offersOf(product: Bag): Bag[] {
   const raw = product.offers;
   if (Array.isArray(raw)) return raw.filter(isBag);
@@ -574,7 +601,7 @@ export function parseProductPage(html: string, target: URL): Unfurled {
     firstMeta(html, ["product:size"]);
 
   const imageUrl = absolutise(
-    (product ? firstString(product.image) : null) ??
+    (product ? firstUrlString(product.image) : null) ??
       firstMeta(html, ["og:image:secure_url", "og:image", "twitter:image"]),
     target,
   );

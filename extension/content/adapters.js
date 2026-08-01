@@ -396,6 +396,33 @@
     return null;
   }
 
+  /**
+   * Like `firstString`, but for fields that must yield a URL.
+   *
+   * `name` is deliberately absent. Shopify and others ship images as
+   * `{ "@type": "ImageObject", "name": "...", "url": "..." }`, and a
+   * generic walk picks the name — which then resolves against the page as a
+   * link that is not an image, and every photograph silently vanishes.
+   */
+  function firstUrlString(value) {
+    if (typeof value === "string") return clean(value) || null;
+    if (Array.isArray(value)) {
+      for (const entry of value) {
+        const found = firstUrlString(entry);
+        if (found) return found;
+      }
+      return null;
+    }
+    if (value && typeof value === "object") {
+      for (const key of ["url", "contentUrl", "src", "@id"]) {
+        if (key in value) {
+          const found = firstUrlString(value[key]);
+          if (found) return found;
+        }
+      }
+    }
+    return null;
+  }
   function offersOf(product) {
     const raw = product.offers;
     if (Array.isArray(raw)) return raw.filter(Boolean);
@@ -433,7 +460,13 @@
           price,
           originalPrice: highPrice && price && highPrice > price ? highPrice : null,
           currency: String(currency).toUpperCase(),
-          imageUrl: absolute(firstString(product.image)),
+          imageUrl:
+            absolute(firstUrlString(product.image)) ??
+            absolute(
+              document
+                .querySelector('meta[property="og:image"]')
+                ?.getAttribute("content"),
+            ),
           productUrl: absolute(firstString(product.url)) || location.href,
           color: firstString(product.color),
           size: firstString(product.size),
