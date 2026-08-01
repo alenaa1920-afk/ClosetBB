@@ -25,6 +25,7 @@ const el = {
   autoSave: document.getElementById("auto-save"),
   connected: document.getElementById("connected"),
   autoState: document.getElementById("auto-state"),
+  everywhere: document.getElementById("everywhere"),
 };
 
 let found = [];
@@ -315,6 +316,22 @@ el.settingsToggle.addEventListener("click", () => {
   show(el.settings, el.settings.hidden);
 });
 
+el.everywhere.addEventListener("change", async () => {
+  const wanted = el.everywhere.checked;
+  const reply = await ask({ type: "SET_EVERYWHERE", enabled: wanted });
+
+  if (!reply.ok) {
+    el.everywhere.checked = false;
+    notice(reply.error, "warn");
+    return;
+  }
+  el.everywhere.checked = Boolean(reply.everywhere);
+  if (reply.everywhere) {
+    notice("Now watching every shop you visit. ♥", "good");
+    await scan();
+  }
+});
+
 el.autoSave.addEventListener("change", async () => {
   await ask({ type: "SET_AUTO_SAVE", enabled: el.autoSave.checked });
 });
@@ -358,6 +375,9 @@ el.saveUrl.addEventListener("click", async () => {
 (async function start() {
   const auto = await ask({ type: "GET_AUTO_SAVE" });
   el.autoSave.checked = auto.ok ? Boolean(auto.autoSave) : true;
+
+  const every = await ask({ type: "GET_EVERYWHERE" });
+  el.everywhere.checked = every.ok ? Boolean(every.everywhere) : false;
 
   await refreshStatus();
   await scan();

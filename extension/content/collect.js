@@ -9,6 +9,15 @@
 (function () {
   "use strict";
 
+  /**
+   * The collector can now arrive by four routes: the declared content script,
+   * the everywhere script registered at runtime, the worker adopting an open
+   * tab, and the popup injecting on demand. Running twice would attach two
+   * click listeners and save the same piece twice, so the first one in wins.
+   */
+  if (self.__monAmourCollector) return;
+  self.__monAmourCollector = true;
+
   chrome.runtime.onMessage.addListener((message, _sender, respond) => {
     if (message?.type !== "MON_AMOUR_COLLECT") return false;
 
@@ -106,21 +115,40 @@
     if (now - lastAddAt < 800) return;
     lastAddAt = now;
 
-    // Let the site register the choice before we read the page.
-    setTimeout(() => {
-      let product;
+    /**
+     * Read the page straight away rather than waiting a fixed beat.
+     *
+     * Everything we need — name, price, the size she just chose — is already
+     * in the DOM at the moment she presses the button; the old 900ms pause was
+     * insurance against slow sites and it made every save feel sluggish. Now
+     * we try immediately and only fall back to waiting if the first look came
+     * up empty, so the common case is instant and the awkward case still works.
+     */
+    const attempts = [0, 400, 1100];
+
+    const tryCollect = (index) => {
+      let product = null;
       try {
         product = self.MonAmourAdapters.collectCurrent();
       } catch {
+        product = null;
+      }
+
+      if (product?.title) {
+        chrome.runtime.sendMessage(
+          { type: "ADD_TO_CART", pageUrl: location.href, product },
+          () => void chrome.runtime.lastError,
+        );
         return;
       }
-      if (!product?.title) return;
 
-      chrome.runtime.sendMessage(
-        { type: "ADD_TO_CART", pageUrl: location.href, product },
-        () => void chrome.runtime.lastError,
-      );
-    }, 900);
+      const next = index + 1;
+      if (next < attempts.length) {
+        setTimeout(() => tryCollect(next), attempts[next] - attempts[index]);
+      }
+    };
+
+    tryCollect(0);
   }
 
   document.addEventListener(

@@ -398,18 +398,28 @@ async function onAddToCart(message, sender) {
     autoSaveLog[signature] &&
     now - autoSaveLog[signature] < AUTO_SAVE_COOLDOWN_MS
   ) {
+    await noteAuto({ outcome: "already saved just now", title: product.title });
     return { saved: 0, skipped: "cooldown" };
+  }
+
+  // Answer the press at once. Waiting on the round trip before showing
+  // anything is what made saving feel slow, even when it was quick.
+  if (tabId != null) {
+    void chrome.action.setBadgeText({ tabId, text: "♥" }).catch(() => {});
+    void chrome.action
+      .setBadgeBackgroundColor({ tabId, color: "#EC4899" })
+      .catch(() => {});
   }
 
   try {
     const result = await save([product]);
     autoSaveLog[signature] = now;
     await chrome.storage.session.set({ autoSaveLog });
+    await noteAuto({ outcome: "saved", title: product.title });
 
     if (tabId != null) {
-      await chrome.action.setBadgeText({ tabId, text: "♥" });
+      // Settle from pink to green once it is genuinely filed.
       await chrome.action.setBadgeBackgroundColor({ tabId, color: "#15926B" });
-      // Let the tick fade rather than sit there forever.
       setTimeout(() => {
         void chrome.action.setBadgeText({ tabId, text: "" }).catch(() => {});
       }, 6000);
@@ -575,9 +585,84 @@ async function adoptOpenTabs() {
   }
 }
 
+/* ------------------------------------------------------------------ *
+ *  Every shop, not just the seven
+ *
+ *  The manifest declares the collector only for the shops we know, so a plain
+ *  install asks for access to those and nothing else. Turning this on requests
+ *  access to every site and registers the collector there too — one decision,
+ *  made deliberately, rather than a permission demanded up front.
+ * ------------------------------------------------------------------ */
+
+const EVERYWHERE_ID = "monAmourEverywhere";
+const EVERYWHERE_MATCHES = ["http://*/*", "https://*/*"];
+
+async function everywhereEnabled() {
+  const { everywhere } = await chrome.storage.sync.get("everywhere");
+  return Boolean(everywhere);
+}
+
+async function unregisterEverywhere() {
+  try {
+    const existing = await chrome.scripting.getRegisteredContentScripts({
+      ids: [EVERYWHERE_ID],
+    });
+    if (existing.length) {
+      await chrome.scripting.unregisterContentScripts({ ids: [EVERYWHERE_ID] });
+    }
+  } catch {
+    // Nothing registered.
+  }
+}
+
+async function registerEverywhere() {
+  const granted = await chrome.permissions.contains({
+    origins: EVERYWHERE_MATCHES,
+  });
+  if (!granted) return false;
+
+  await unregisterEverywhere();
+  try {
+    await chrome.scripting.registerContentScripts([
+      {
+        id: EVERYWHERE_ID,
+        matches: EVERYWHERE_MATCHES,
+        js: ["content/adapters.js", "content/collect.js"],
+        runAt: "document_idle",
+      },
+    ]);
+    return true;
+  } catch (error) {
+    console.warn("[mon amour] could not register everywhere:", error.message);
+    return false;
+  }
+}
+
+/** Injects into every open tab, so it starts working without reloading them. */
+async function adoptEveryOpenTab() {
+  let tabs = [];
+  try {
+    tabs = await chrome.tabs.query({ url: EVERYWHERE_MATCHES });
+  } catch {
+    return;
+  }
+  for (const tab of tabs) {
+    if (!tab.id) continue;
+    try {
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        files: ["content/adapters.js", "content/collect.js"],
+      });
+    } catch {
+      // Chrome's own pages refuse injection; that is fine.
+    }
+  }
+}
+
 async function onWake() {
   await ensureAlarm();
   await registerSessionBridge(await appUrl());
+  if (await everywhereEnabled()) await registerEverywhere();
   await adoptOpenTabs();
 }
 
@@ -649,6 +734,34 @@ const HANDLERS = {
 
   async SESSION({ session }) {
     return rememberSession(session);
+  },
+
+  async GET_EVERYWHERE() {
+    return {
+      everywhere: await everywhereEnabled(),
+      granted: await chrome.permissions.contains({ origins: EVERYWHERE_MATCHES }),
+    };
+  },
+
+  async SET_EVERYWHERE({ enabled }) {
+    if (!enabled) {
+      await chrome.storage.sync.set({ everywhere: false });
+      await unregisterEverywhere();
+      return { everywhere: false };
+    }
+
+    const granted = await chrome.permissions.request({
+      origins: EVERYWHERE_MATCHES,
+    });
+    if (!granted) {
+      throw new Error("Chrome declined access to other sites.");
+    }
+
+    const registered = await registerEverywhere();
+    await chrome.storage.sync.set({ everywhere: registered });
+    // Start working on what is already open, rather than after a reload.
+    if (registered) await adoptEveryOpenTab();
+    return { everywhere: registered };
   },
 
   async GET_AUTO_SAVE() {
